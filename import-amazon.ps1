@@ -464,4 +464,5 @@ if ($process -eq 1)
 {
 sendmail "gsc@warensortiment.de" $content
 sendmail "pph@warensortiment.de" $content
+sendmail "fes@warensortiment.de" $content
 }
