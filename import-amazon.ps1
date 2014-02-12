@@ -45,31 +45,20 @@ $filecount = 0
 foreach ($datei in $dateinamen)
 	{
     $filecount++
-    if ($datei)
-        {
+    if ($datei){
         [xml]$xml = (get-content D:\import\amazon\amazon-amtu\DocumentTransport\production\reports\$datei -encoding UTF8) | Foreach-Object {$_ -replace ' xsi:noNamespaceSchemaLocation="amzn-envelope.xsd"', ''}
         $process = 1
-
-        
         $order_count = $xml.AmazonEnvelope.Message.Length  #Anzahl bestellungen in file bestimmen
-        if(!$order_count)
-        {
+        if(!$order_count){
         $order_count = 1
-        
         }
        echo "processing file $datei bestellungen: $order_count"
-        for($order_no = 0; $order_no -lt $order_count; $order_no++)
-        {
-        if(!$xml.AmazonEnvelope.Message.Length)
-            {
+        for($order_no = 0; $order_no -lt $order_count; $order_no++){
+        if(!$xml.AmazonEnvelope.Message.Length){
             $child = $xml.AmazonEnvelope.Message
-            }
-        else
-            {
+            }else{
             $child = $xml.AmazonEnvelope.Message[$order_no]
             }
-            
-      
         echo "processing... order $filecount"
         $content += "`n`nBestellung NR.: $filecount `n"
             [xml]$xml_customer = (get-content D:\import\amazon\xml\blank_customer.xml)
@@ -81,13 +70,11 @@ foreach ($datei in $dateinamen)
             $queryString = "select customer_id from FET_CUSTOMER where customer_proxy_guid = (select GUID from FET_CUSTOMER_PROXY where businesspartner_guid = (select businesspartner_guid from V_BUSINESSPARTNER_MAIL where REGEXP_LIKE(comm_string,'$mail','i')))"
             $command = new-Object System.Data.OracleClient.OracleCommand($queryString, $connection)
             $result = $command.ExecuteScalar()   
-            if(!$result)
-                {
+            if(!$result){
                 $queryString = "select customer_id from FET_CUSTOMER where customer_proxy_guid = (select GUID from FET_CUSTOMER_PROXY where businesspartner_guid = (select businesspartner_guid from FET_BP_EMPLOYEE where guid = (select bp_employee_guid from V_BP_EMPLOYEE_MAIL where REGEXP_LIKE(comm_string,'$mail','i')  and rownum = 1)))"
                 $command = new-Object System.Data.OracleClient.OracleCommand($queryString, $connection)
                 $result = $command.ExecuteScalar()   
-                if(!$result)
-                    {
+                if(!$result){
                     echo "Kunde nicht vorhanden"
                     $istkundeerstellt = "kundennummer war nicht vorhanden, wurde generiert"
                     [xml]$saved_variables = (get-content D:\import\amazon\xml\saved_variables.xml) ### auslesen der nächsten kd-nr
@@ -97,35 +84,26 @@ foreach ($datei in $dateinamen)
                     $saved_variables.Customers.next_customer_id = $next_customer_id.ToString()
                     $saved_variables.Save("D:\import\amazon\xml\saved_variables.xml")
 					$neuer_kunde = $true
-                    }
-                else
-                    {
+                    }else{
                     $istkundeerstellt = "kundennummer war vorhanden, wurde aus der DB genommen"
                     $customer_id = $result
 					$neuer_kunde = $false
                     }
-                }
-            else
-                {
+                }else{
                 $istkundeerstellt = "kundennummer war vorhanden, wurde aus der DB genommen"
                 $customer_id = $result
 				$neuer_kunde = $false
                 }
-           $connection.close()
+            $connection.close()
         
             #### /sql
             
-            if($neuer_kunde -eq $true)
-			{
+            if($neuer_kunde -eq $true){
 				#### übernahme in neuen kunden
 				$xml_customer.Customers.ControlInfo.GenerationDate = "$time2"
 				$xml_customer.Customers.ControlInfo.GeneratorInfo = "PCE AMAZON XML PARSER BETA 3"
-				
 				$xml_customer.Customers.Company.Country = $child.OrderReport.BillingData.Address.CountryCode
-				
 				$xml_customer.Customers.Customer.Id.InnerText = "$customer_id"
-				
-				
 				$content += "Kundennummer: $customer_id `n"
 				$xml_customer.Customers.Customer.Type = "private customer"   #### evtl alternieren
 				$xml_customer.Customers.Customer.PrivateCustomerData.Country = $child.OrderReport.BillingData.Address.CountryCode
